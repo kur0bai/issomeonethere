@@ -134,6 +134,17 @@ def run_netstat():
         raise ex
 
 
+def run_open_files(port: str):
+    command = f"sudo lsof -i :{port}"
+    try:
+        result = subprocess.run(command, shell=True,
+                                check=True, text=True, capture_output=True)
+        print('\n')
+        print(Fore.WHITE + f"{result.stdout}")
+    except Exception as ex:
+        raise ex
+
+
 def extract_pids(process_lines):
     pids = []
     for line in process_lines:
@@ -172,20 +183,40 @@ def main():
 
     processes = run_detect_meterpreter_shells()
 
-    if not processes:
-        return
+    if processes:
+        pids = extract_pids(processes)
+        response = input(
+            "Do yo want to kill this processes? y/n: ").strip().lower()
+        if (response == 'y'):
+            spinner = Spinner(
+                Fore.CYAN + r"🗡️ Killing processes ")
+            spinner.start()
+            kill_processes(pids)
+            spinner.stop()
 
-    pids = extract_pids(processes)
-    response = input(
-        "Do yo want to kill this processes? y/n: ").strip().lower()
-    if (response == 'y'):
-        spinner = Spinner(
-            Fore.CYAN + r"🗡️ Killing processes ")
-        spinner.start()
-        kill_processes(pids)
-        spinner.stop()
-
+    print('\n')
     run_netstat()
+    response = input(
+        "Do yo want to inspec an specific port? y/n: ").strip().lower()
+    if (response == 'y'):
+        port = input(f'Please enter the port number: {Fore.CYAN}')
+        spinner = Spinner(
+            Fore.GREEN + r"Checking this port, please wait ")
+        spinner.start()
+        run_open_files(port)
+        spinner.stop()
+        kill_response = input(
+            "Do yo want to kill specific processes? y/n: ").strip().lower()
+        if (kill_response == 'y'):
+            selected_pids = input(
+                f'Please, enter the PIDS separating by space: {Fore.CYAN}')
+            pids = selected_pids.split()
+            spinner = Spinner(
+                Fore.CYAN + r"🗡️ Killing processes ")
+            spinner.start()
+            kill_processes(pids)
+            spinner.stop()
+            run_open_files(port)
 
 
 if __name__ == "__main__":

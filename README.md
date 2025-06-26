@@ -19,6 +19,7 @@ This Python script is designed to detect suspicious processes related to active 
 
 - Python 3.7 or higher
 - Administrator/root privileges
+- [arp-scan](https://github.com/royhills/arp-scan)
 
   
 
