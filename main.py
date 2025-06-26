@@ -1,8 +1,71 @@
 import argparse
 import subprocess
 import datetime
+import sys
+import threading
+import time
+from colorama import Fore, Style
 
 LOG_FILE = "meterpreter_detection.log"
+
+
+class Spinner:
+    """
+    Function to show and hide spinner animation
+    """
+
+    def __init__(self, message="Loading"):
+        self.spinner = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
+        self.message = message
+        self.running = False
+        self.thread = None
+
+    def start(self):
+        if self.running:
+            return
+
+        self.running = True
+        self.thread = threading.Thread(target=self._animate, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
+
+        # clean
+        sys.stdout.write("\r" + " " * (len(self.message) + 4) + "\r")
+        sys.stdout.flush()
+
+    def _animate(self):
+        while self.running:
+            for frame in self.spinner:
+                if not self.running:
+                    break
+                sys.stdout.write(f"\r{self.message} {frame} ")
+                sys.stdout.flush()
+                time.sleep(0.1)  # speed
+
+
+def show_banner():
+    """
+    Main identifier banner
+    """
+    banner = [
+        Fore.GREEN + r" __          ___           _  _______ _                   ",
+        Fore.GREEN + r" \ \        / / |         (_)|__   __| |",
+        Fore.GREEN + r"  \ \  /\  / /| |__   ___  _ ___| |  | |__   ___ _ __ ___",
+        Fore.GREEN + r"   \ \/  \/ / | '_ \ / _ \| / __| |  | '_ \ / _ \ '__/ _ \\",
+        Fore.GREEN +
+        r"    \  /\  /  | | | | (_) | \__ \ |  | | | |  __/ | |  __/",
+        Fore.GREEN + r"     \/  \/   |_| |_|\___/|_|___/_|  |_| |_|\___|_|  \___|",
+        Fore.CYAN + r"",
+        Fore.CYAN + r"        -------------- By: Kur0bai ------------------",
+        Style.RESET_ALL
+    ]
+
+    for line in banner:
+        print(line)
 
 
 def log_detection(content: str):
@@ -16,15 +79,18 @@ def run_detect_local_devices(interface: str):
     try:
         result = subprocess.run(command, shell=True,
                                 check=True, text=True, capture_output=True)
-        print(f"Local devices connected: {result.stdout}")
+        print(Fore.GREEN + r"Local devices connected: ")
+        print(Fore.WHITE + f"{result.stdout}")
     except Exception as ex:
         raise ex
 
 
 def run_detect_meterpreter_shells():
     try:
+        spinner = Spinner(
+            "Checking for meterpreter shells in your machine")
+        spinner.start()
         command = ["pgrep", "-af", "meterpreter"]
-        # command = ["ps aux | grep meterpreter"]
         result = subprocess.run(
             command,
             capture_output=True,
@@ -33,7 +99,9 @@ def run_detect_meterpreter_shells():
         lines = [line for line in result.stdout.splitlines()
                  if 'meterpreter' in line.lower()]
         if lines:
-            print("⚠️ Warning! suspicious processes running with 'meterpreter': \n")
+            spinner.stop()
+            print(
+                Fore.RED + r"⚠️ Warning! suspicious processes running with 'meterpreter': \n")
             for line in lines:
                 print(line)
                 log_detection("Detected processes:")
@@ -41,11 +109,29 @@ def run_detect_meterpreter_shells():
                 log_detection(line)
             return lines
         else:
-            print("✅ Active processes running meterpreter not found.")
+            spinner.stop()
+            print(Fore.CYAN + r"✅ Active processes running meterpreter not found.")
             return False
+
     except FileNotFoundError:
-        print("Ups `pgrep` command are not available in this system.")
+        print(Fore.RED + r"Ups `pgrep` command are not available in this system.")
         return False
+
+
+def run_netstat():
+    spinner = Spinner(
+        Fore.GREEN + r"Running netstat to get active connections ")
+    spinner.start()
+    command = "sudo netstat -tunp"
+    try:
+        result = subprocess.run(command, shell=True,
+                                check=True, text=True, capture_output=True)
+        print('\n')
+        print(Fore.WHITE + f"{result.stdout}")
+        spinner.stop()
+    except Exception as ex:
+        spinner.stop()
+        raise ex
 
 
 def extract_pids(process_lines):
@@ -84,20 +170,24 @@ def main():
     args = get_args()
     run_detect_local_devices(args.interface)
 
-    get_meterpreter = input(
-        "Check for actives reverse meterpreter shells? y/n: ").strip().lower()
-    if (get_meterpreter == "y"):
-        processes = run_detect_meterpreter_shells()
+    processes = run_detect_meterpreter_shells()
 
-        if not processes:
-            return
+    if not processes:
+        return
 
-        pids = extract_pids(processes)
-        response = input(
-            "Do yo want to kill this processes? y/n: ").strip().lower()
-        if (response == 'y'):
-            kill_processes(pids)
+    pids = extract_pids(processes)
+    response = input(
+        "Do yo want to kill this processes? y/n: ").strip().lower()
+    if (response == 'y'):
+        spinner = Spinner(
+            Fore.CYAN + r"🗡️ Killing processes ")
+        spinner.start()
+        kill_processes(pids)
+        spinner.stop()
+
+    run_netstat()
 
 
 if __name__ == "__main__":
+    show_banner()
     main()
