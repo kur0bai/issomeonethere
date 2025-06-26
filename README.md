@@ -12,6 +12,7 @@ This Python script is designed to detect suspicious processes related to active 
 - Displays information such as PID, process name, and active ports.
 - Offers to automatically kill detected malicious processes.
 - Works on Unix/Linux systems (can be adapted for Windows).
+- Logs of killed processes
 
 ---
 
