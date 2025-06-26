@@ -145,6 +145,17 @@ def run_open_files(port: str):
         raise ex
 
 
+def run_block_port_on_firewall(port: str):
+    command = f"sudo ufw deny {port}"
+    try:
+        result = subprocess.run(command, shell=True,
+                                check=True, text=True, capture_output=True)
+        print('\n')
+        print(Fore.WHITE + f"{result.stdout}")
+    except Exception as ex:
+        raise ex
+
+
 def extract_pids(process_lines):
     pids = []
     for line in process_lines:
@@ -161,10 +172,10 @@ def kill_processes(pids):
         try:
             command = ["kill", "-9", pid]
             subprocess.run(command, check=True)
-            print(f"✅ Process {pid} killed.")
+            print(Fore.CYAN + f"✅ Process {pid} killed.")
             log_detection(f"Process {pid} killed.")
         except subprocess.CalledProcessError:
-            print(f"❌ Error killing the process {pid}.")
+            print(Fore.RED + f"❌ Error killing the process {pid}.")
             log_detection(f"Error killing the process {pid}.")
 
 
@@ -177,6 +188,21 @@ def get_args():
     return args
 
 
+def prompt_yes_no(message: str) -> bool:
+    response = input(f"{message} (y/n): ").strip().lower()
+    return response == 'y'
+
+
+def prompt_for_pids() -> list:
+    pids_input = input(
+        f'Please enter the PIDs separated by space: {Fore.CYAN}')
+    return pids_input.strip().split()
+
+
+def prompt_for_port() -> str:
+    return input(f'Please enter the port number: {Fore.CYAN}').strip()
+
+
 def main():
     args = get_args()
     run_detect_local_devices(args.interface)
@@ -185,38 +211,32 @@ def main():
 
     if processes:
         pids = extract_pids(processes)
-        response = input(
-            "Do yo want to kill this processes? y/n: ").strip().lower()
-        if (response == 'y'):
-            spinner = Spinner(
-                Fore.CYAN + r"🗡️ Killing processes ")
+        if prompt_yes_no("Do you want to kill these processes?"):
+            spinner = Spinner(Fore.GREEN + r"🗡️ Killing processes ")
             spinner.start()
             kill_processes(pids)
             spinner.stop()
 
-    print('\n')
     run_netstat()
-    response = input(
-        "Do yo want to inspec an specific port? y/n: ").strip().lower()
-    if (response == 'y'):
-        port = input(f'Please enter the port number: {Fore.CYAN}')
-        spinner = Spinner(
-            Fore.GREEN + r"Checking this port, please wait ")
+
+    if prompt_yes_no("Do you want to inspect a specific port?"):
+        port = prompt_for_port()
+
+        spinner = Spinner(Fore.GREEN + r"Checking this port, please wait ")
         spinner.start()
         run_open_files(port)
         spinner.stop()
-        kill_response = input(
-            "Do yo want to kill specific processes? y/n: ").strip().lower()
-        if (kill_response == 'y'):
-            selected_pids = input(
-                f'Please, enter the PIDS separating by space: {Fore.CYAN}')
-            pids = selected_pids.split()
-            spinner = Spinner(
-                Fore.CYAN + r"🗡️ Killing processes ")
+
+        if prompt_yes_no("Do you want to kill specific processes?"):
+            pids = prompt_for_pids()
+            spinner = Spinner(Fore.CYAN + r"🗡️ Killing processes ")
             spinner.start()
             kill_processes(pids)
             spinner.stop()
             run_open_files(port)
+
+            if prompt_yes_no("Do you want to block the port on your firewall?"):
+                run_block_port_on_firewall(port)
 
 
 if __name__ == "__main__":
