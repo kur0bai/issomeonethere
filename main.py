@@ -186,7 +186,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="Detect someone in your pc")
     parser.add_argument("--interface", type=str,
                         required=True,
-                        help="Internet interface name, you can find it typing 'ifconfig'")
+                        help="Internet interface name, use 'ifconfig'")
     args = parser.parse_args()
     return args
 
@@ -238,7 +238,7 @@ def main():
             spinner.stop()
             run_open_files(port)
 
-            if prompt_yes_no("Do you want to block the port on your firewall?"):
+            if prompt_yes_no("Do you want to block this port?"):
                 run_block_port_on_firewall(port)
 
     print(Fore.GREEN + r"👋 See you next time!")
