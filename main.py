@@ -135,20 +135,23 @@ def run_netstat():
 
 
 def run_open_files(port: str):
-    command = f"sudo lsof -i :{port}"
+    command = ["lsof", "-i", f":{port}"]
     try:
-        result = subprocess.run(command, shell=True,
-                                check=True, text=True, capture_output=True)
-        print('\n')
-        print(Fore.WHITE + f"{result.stdout}")
+        if port.isdigit():
+            result = subprocess.run(command,
+                                    check=True, text=True, capture_output=True)
+            print('\n')
+            print(Fore.WHITE + f"{result.stdout}")
+        else:
+            print("⚠️ Invalid port number.")
     except Exception as ex:
         raise ex
 
 
 def run_block_port_on_firewall(port: str):
-    command = f"sudo ufw deny {port}"
+    command = ["sudo", "ufw", "deny", f"{port}"]
     try:
-        result = subprocess.run(command, shell=True,
+        result = subprocess.run(command,
                                 check=True, text=True, capture_output=True)
         print('\n')
         print(Fore.WHITE + f"{result.stdout}")
@@ -237,6 +240,8 @@ def main():
 
             if prompt_yes_no("Do you want to block the port on your firewall?"):
                 run_block_port_on_firewall(port)
+
+    print(Fore.GREEN + r"👋 See you next time!")
 
 
 if __name__ == "__main__":
