@@ -52,15 +52,21 @@ def show_banner():
     Main identifier banner
     """
     banner = [
-        Fore.GREEN + r" __          ___           _  _______ _                   ",
-        Fore.GREEN + r" \ \        / / |         (_)|__   __| |",
-        Fore.GREEN + r"  \ \  /\  / /| |__   ___  _ ___| |  | |__   ___ _ __ ___",
-        Fore.GREEN + r"   \ \/  \/ / | '_ \ / _ \| / __| |  | '_ \ / _ \ '__/ _ \\",
-        Fore.GREEN +
-        r"    \  /\  /  | | | | (_) | \__ \ |  | | | |  __/ | |  __/",
-        Fore.GREEN + r"     \/  \/   |_| |_|\___/|_|___/_|  |_| |_|\___|_|  \___|",
-        Fore.CYAN + r"",
-        Fore.CYAN + r"        -------------- By: Kur0bai ------------------",
+        (Fore.GREEN +
+         r" __          ___           _  _______ _                   "),
+        (Fore.GREEN +
+         r" \ \        / / |         (_)|__   __| |"),
+        (Fore.GREEN +
+         r"  \ \  /\  / /| |__   ___  _ ___| |  | |__   ___ _ __ ___"),
+        (Fore.GREEN +
+         r"   \ \/  \/ / | '_ \ / _ \| / __| |  | '_ \ / _ \ '__/ _ \\"),
+        (Fore.GREEN +
+         r"    \  /\  /  | | | | (_) | \__ \ |  | | | |  __/ | |  __/"),
+        (Fore.GREEN +
+         r"     \/  \/   |_| |_|\___/|_|___/_|  |_| |_|\___|_|  \___|"),
+        (Fore.CYAN + r""),
+        (Fore.CYAN +
+         r"        -------------- By: Kur0bai ------------------"),
         Style.RESET_ALL
     ]
 
@@ -77,7 +83,7 @@ def log_detection(content: str):
 def run_detect_local_devices(interface: str):
     command = f"sudo arp-scan --interface={interface} --localnet"
     try:
-        result = subprocess.run(command, shell=True,
+        result = subprocess.run(command,
                                 check=True, text=True, capture_output=True)
         print(Fore.GREEN + r"Local devices connected: ")
         print(Fore.WHITE + f"{result.stdout}")
@@ -101,7 +107,9 @@ def run_detect_meterpreter_shells():
         if lines:
             spinner.stop()
             print(
-                Fore.RED + r"⚠️ Warning! suspicious processes running with 'meterpreter': \n")
+                Fore.RED + 
+                r"⚠️ Alert! suspicious processes with 'meterpreter': \n"
+                )
             for line in lines:
                 print(line)
                 log_detection("Detected processes:")
@@ -110,11 +118,15 @@ def run_detect_meterpreter_shells():
             return lines
         else:
             spinner.stop()
-            print(Fore.CYAN + r"✅ Active processes running meterpreter not found.")
+            print(Fore.CYAN + 
+                  r"✅ Active processes running meterpreter not found."
+                  )
             return False
 
     except FileNotFoundError:
-        print(Fore.RED + r"Ups `pgrep` command are not available in this system.")
+        print(Fore.RED + 
+              r"Ups `pgrep` command are not available in this system."
+              )
         return False
 
 
@@ -124,7 +136,7 @@ def run_netstat():
     spinner.start()
     command = "sudo netstat -tunp"
     try:
-        result = subprocess.run(command, shell=True,
+        result = subprocess.run(command,
                                 check=True, text=True, capture_output=True)
         print('\n')
         print(Fore.WHITE + f"{result.stdout}")

@@ -25,6 +25,9 @@ jobs:
             pip install -r requirements.txt
           fi
           pip install flake8 mypy bandit safety
+      
+      - name: Lint with flake8
+        run: flake8 main.py    
 
       - name: Type check using mypy
         run: mypy main.py || true
