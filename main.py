@@ -107,7 +107,7 @@ def run_detect_meterpreter_shells():
         if lines:
             spinner.stop()
             print(
-                Fore.RED + 
+                Fore.RED +
                 r"⚠️ Alert! suspicious processes with 'meterpreter': \n"
                 )
             for line in lines:
@@ -118,13 +118,13 @@ def run_detect_meterpreter_shells():
             return lines
         else:
             spinner.stop()
-            print(Fore.CYAN + 
+            print(Fore.CYAN +
                   r"✅ Active processes running meterpreter not found."
                   )
             return False
 
     except FileNotFoundError:
-        print(Fore.RED + 
+        print(Fore.RED +
               r"Ups `pgrep` command are not available in this system."
               )
         return False
