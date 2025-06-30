@@ -134,7 +134,8 @@ def run_detect_local_devices(interface: str):
     command = ["arp-scan", f"--interface={interface}", "--localnet"]
     try:
         result = subprocess.run(command,
-                                check=True, text=True, capture_output=True)  # nosec B603
+                                check=True, text=True, capture_output=True)
+        # nosec B603
         print(Fore.GREEN + r"Local devices connected: ")
         print(Fore.WHITE + f"{result.stdout}")
     except Exception as ex:
@@ -187,7 +188,8 @@ def run_netstat():
     command = ["netstat", "-tunp"]
     try:
         result = subprocess.run(command,
-                                check=True, text=True, capture_output=True)  # nosec B603
+                                check=True, text=True, capture_output=True)
+        # nosec B603
         print('\n')
         print(Fore.WHITE + f"{result.stdout}")
         spinner.stop()
@@ -227,7 +229,8 @@ def run_block_port_on_firewall(port: str):
     try:
         if port.isdigit():
             result = subprocess.run(command,
-                                    check=True, text=True, capture_output=True)  # nosec B603
+                                    check=True, text=True, capture_output=True)
+            # nosec B603
             print('\n')
             print(Fore.WHITE + f"{result.stdout}")
         else:
