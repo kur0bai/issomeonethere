@@ -81,7 +81,7 @@ def log_detection(content: str):
 
 
 def run_detect_local_devices(interface: str):
-    command = f"sudo arp-scan --interface={interface} --localnet"
+    command = ["arp-scan", f"--interface={interface}", "--localnet"]
     try:
         result = subprocess.run(command,
                                 check=True, text=True, capture_output=True)
@@ -134,7 +134,7 @@ def run_netstat():
     spinner = Spinner(
         Fore.GREEN + r"Running netstat to get active connections ")
     spinner.start()
-    command = "sudo netstat -tunp"
+    command = ["netstat", "-tunp"]
     try:
         result = subprocess.run(command,
                                 check=True, text=True, capture_output=True)
@@ -161,12 +161,15 @@ def run_open_files(port: str):
 
 
 def run_block_port_on_firewall(port: str):
-    command = ["sudo", "ufw", "deny", f"{port}"]
+    command = ["ufw", "deny", f"{port}"]
     try:
-        result = subprocess.run(command,
-                                check=True, text=True, capture_output=True)
-        print('\n')
-        print(Fore.WHITE + f"{result.stdout}")
+        if port.isdigit():
+            result = subprocess.run(command,
+                                    check=True, text=True, capture_output=True)
+            print('\n')
+            print(Fore.WHITE + f"{result.stdout}")
+        else:
+            print("⚠️ Invalid port number.")
     except Exception as ex:
         raise ex
 
