@@ -5,6 +5,9 @@ import sys
 import threading
 import time
 from colorama import Fore, Style
+import shutil
+import re
+import os
 
 LOG_FILE = "meterpreter_detection.log"
 
@@ -72,6 +75,53 @@ def show_banner():
 
     for line in banner:
         print(line)
+
+
+"""
+    This script is designed to detect suspicious activity on a system,
+    particularly looking for meterpreter shells and
+    other network-related anomalies.
+    It provides functionalities to scan local devices,
+    check for active processes,inspect network connections,
+    and manage firewall rules.
+    The script requires root privileges to run certain commands
+    and uses color-coded output for better readability.
+"""
+
+
+def ensure_root():
+    if os.geteuid() != 0:
+        print(Fore.RED +
+              "❌ This script must be run as root. Try: sudo python3 script.py"
+              )
+        sys.exit(1)
+
+
+def check_command_exists(command: str):
+    if shutil.which(command) is None:
+        print(Fore.RED +
+              f"❌ Required command `{command}` not found in system PATH."
+              )
+        sys.exit(1)
+
+
+def validate_interface(interface: str):
+    if not re.match(r"^[a-zA-Z0-9_.-]+$", interface):
+        print(Fore.RED + "❌ Invalid network interface name.")
+        sys.exit(1)
+
+
+def validate_port(port: str):
+    if not port.isdigit() or not (1 <= int(port) <= 65535):
+        print(Fore.RED + "❌ Invalid port number.")
+        sys.exit(1)
+
+
+def validate_pid(pid: str):
+    if not pid.isdigit():
+        print(Fore.RED + f"❌ Invalid PID: {pid}")
+        return False
+    return True
 
 
 def log_detection(content: str):
@@ -147,17 +197,24 @@ def run_netstat():
 
 
 def run_open_files(port: str):
+    if not port.isdigit():
+        print("⚠️ Invalid port number.")
+        return
+
+    if shutil.which("lsof") is None:
+        print("❌ `lsof` command not found. Please install it.")
+        return
+
     command = ["lsof", "-i", f":{port}"]
     try:
-        if port.isdigit():
-            result = subprocess.run(command,
-                                    check=True, text=True, capture_output=True)
-            print('\n')
-            print(Fore.WHITE + f"{result.stdout}")
+        result = subprocess.run(command, check=True, text=True, capture_output=True)
+        print('\n')
+        if result.stdout:
+            print(Fore.WHITE + result.stdout)
         else:
-            print("⚠️ Invalid port number.")
-    except Exception as ex:
-        raise ex
+            print(Fore.YELLOW + "ℹ️ No processes found using that port.")
+    except subprocess.CalledProcessError as e:
+        print(Fore.RED + f"❌ Error running lsof: {e}")
 
 
 def run_block_port_on_firewall(port: str):
@@ -222,9 +279,14 @@ def prompt_for_port() -> str:
 
 
 def main():
+    ensure_root()
     args = get_args()
+
+    validate_interface(args.interface)
+    check_command_exists("arp-scan")
     run_detect_local_devices(args.interface)
 
+    check_command_exists("pgrep")
     processes = run_detect_meterpreter_shells()
 
     if processes:
@@ -235,10 +297,13 @@ def main():
             kill_processes(pids)
             spinner.stop()
 
+    check_command_exists("netstat")
     run_netstat()
 
     if prompt_yes_no("Do you want to inspect a specific port?"):
         port = prompt_for_port()
+        validate_port(port)
+        check_command_exists("lsof")
 
         spinner = Spinner(Fore.GREEN + r"Checking this port, please wait ")
         spinner.start()
@@ -247,13 +312,17 @@ def main():
 
         if prompt_yes_no("Do you want to kill specific processes?"):
             pids = prompt_for_pids()
+            pids = [pid for pid in pids if validate_pid(pid)]
+
             spinner = Spinner(Fore.CYAN + r"🗡️ Killing processes ")
             spinner.start()
             kill_processes(pids)
             spinner.stop()
+
             run_open_files(port)
 
             if prompt_yes_no("Do you want to block this port?"):
+                check_command_exists("ufw")
                 run_block_port_on_firewall(port)
 
     print(Fore.GREEN + r"👋 See you next time!")
