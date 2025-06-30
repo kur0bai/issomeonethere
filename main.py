@@ -134,7 +134,7 @@ def run_detect_local_devices(interface: str):
     command = ["arp-scan", f"--interface={interface}", "--localnet"]
     try:
         result = subprocess.run(command,
-                                check=True, text=True, capture_output=True)
+                                check=True, text=True, capture_output=True)  # nosec B603
         print(Fore.GREEN + r"Local devices connected: ")
         print(Fore.WHITE + f"{result.stdout}")
     except Exception as ex:
@@ -151,7 +151,7 @@ def run_detect_meterpreter_shells():
             command,
             capture_output=True,
             text=True
-        )
+        )  # nosec B603
         lines = [line for line in result.stdout.splitlines()
                  if 'meterpreter' in line.lower()]
         if lines:
@@ -187,7 +187,7 @@ def run_netstat():
     command = ["netstat", "-tunp"]
     try:
         result = subprocess.run(command,
-                                check=True, text=True, capture_output=True)
+                                check=True, text=True, capture_output=True)  # nosec B603
         print('\n')
         print(Fore.WHITE + f"{result.stdout}")
         spinner.stop()
@@ -208,12 +208,16 @@ def run_open_files(port: str):
     command = ["lsof", "-i", f":{port}"]
     try:
         result = subprocess.run(command, check=True, text=True,
-                                capture_output=True)
+                                capture_output=True)  # nosec B603
         print('\n')
-        if result.stdout:
+        if result.returncode == 0:
             print(Fore.WHITE + result.stdout)
+        elif result.returncode == 1:
+            print(Fore.CYAN + f"ℹ️ No processes found using port {port}.")
         else:
-            print(Fore.YELLOW + "ℹ️ No processes found using that port.")
+            print(Fore.RED +
+                  f"❌ Unexpected error running lsof.{result.returncode}")
+            print(result.stderr)
     except subprocess.CalledProcessError as e:
         print(Fore.RED + f"❌ Error running lsof: {e}")
 
@@ -223,7 +227,7 @@ def run_block_port_on_firewall(port: str):
     try:
         if port.isdigit():
             result = subprocess.run(command,
-                                    check=True, text=True, capture_output=True)
+                                    check=True, text=True, capture_output=True)  # nosec B603
             print('\n')
             print(Fore.WHITE + f"{result.stdout}")
         else:
@@ -244,10 +248,11 @@ def extract_pids(process_lines):
 
 
 def kill_processes(pids):
+    print('\n')
     for pid in pids:
         try:
             command = ["kill", "-9", pid]
-            subprocess.run(command, check=True)
+            subprocess.run(command, check=True)  # nosec B603
             print(Fore.CYAN + f"✅ Process {pid} killed.")
             log_detection(f"Process {pid} killed.")
         except subprocess.CalledProcessError:
