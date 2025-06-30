@@ -207,7 +207,8 @@ def run_open_files(port: str):
 
     command = ["lsof", "-i", f":{port}"]
     try:
-        result = subprocess.run(command, check=True, text=True, capture_output=True)
+        result = subprocess.run(command, check=True, text=True,
+                                capture_output=True)
         print('\n')
         if result.stdout:
             print(Fore.WHITE + result.stdout)
