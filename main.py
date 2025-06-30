@@ -1,5 +1,5 @@
 import argparse
-import subprocess # nosec B404
+import subprocess  # nosec B404
 import datetime
 import sys
 import threading
