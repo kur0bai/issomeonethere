@@ -1,4 +1,4 @@
-name: Python Security
+name: CI - Python Security
 
 on:
   push:
